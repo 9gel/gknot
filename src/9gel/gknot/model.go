@@ -1,6 +1,6 @@
 // Author: nigelchoi@google.com (Nigel Choi)
 
-// Representation and solver of Thinkfun's Gordion Knot.
+// Representation Thinkfun's Gordion Knot.
 // When assembled, orient the cube like the picture on the packaging. Imagine
 // an isometriclly projected cube on a right-handed coordinate system:
 //
