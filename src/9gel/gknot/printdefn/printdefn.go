@@ -9,16 +9,35 @@ import (
 	"9gel/gknot"
 )
 
+func Print(piece gknot.PieceDefinition) {
+	const block = '\u2588'
+	const esc = '\x1b'
+	fmt.Printf("%c[1;%dm%v%c[0m piece:\n", esc, piece.EscColor, piece.Name, esc)
+	fmt.Printf("%c[0;%dm", esc, piece.EscColor)
+	// Print higher index rows first since the coordinate has y axis going upwards.
+	for i := len(piece.Geom)-1; i >= 0; i-- {
+		for _, v := range piece.Geom[i] {
+			if v == 1 {
+				fmt.Printf("%c%c", block, block)
+			} else {
+				fmt.Print("  ")
+			}
+		}
+		fmt.Println()
+	}
+	fmt.Printf("%c[0m", esc)
+}
+
 func main() {
-	gknot.BluePieceDef.Print()
+	Print(gknot.BluePieceDef)
 	fmt.Println()
-	gknot.OrangePieceDef.Print()
+	Print(gknot.OrangePieceDef)
 	fmt.Println()
-	gknot.PurplePieceDef.Print()
+	Print(gknot.PurplePieceDef)
 	fmt.Println()
-	gknot.GreenPieceDef.Print()
+	Print(gknot.GreenPieceDef)
 	fmt.Println()
-	gknot.RedPieceDef.Print()
+	Print(gknot.RedPieceDef)
 	fmt.Println()
-	gknot.YellowPieceDef.Print()
+	Print(gknot.YellowPieceDef)
 }
