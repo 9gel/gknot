@@ -5,6 +5,7 @@
 
 # Temp files
 *~
+*.swp
 
 # Folders
 _obj
