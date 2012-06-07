@@ -29,7 +29,7 @@
 //   corresponds to what's in (x, y). If Geom[y][x] == 1 there's a solid; if
 //   Geom[y][x] == 0 there's a void.
 // - The transformation matrix places the piece where they should be in 3-space.
-package main
+package gknot
 
 import (
 	"fmt"
@@ -222,21 +222,4 @@ func NewPuzzle() *Puzzle {
 		RedPieceDef.Piece(),
 		YellowPieceDef.Piece()}
 	return &p
-}
-
-func main() {
-	BluePieceDef.Print()
-	fmt.Println()
-	OrangePieceDef.Print()
-	fmt.Println()
-	PurplePieceDef.Print()
-	fmt.Println()
-	GreenPieceDef.Print()
-	fmt.Println()
-	RedPieceDef.Print()
-	fmt.Println()
-	YellowPieceDef.Print()
-
-	puzzle := NewPuzzle()
-	fmt.Println(puzzle)
 }
