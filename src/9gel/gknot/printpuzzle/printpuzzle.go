@@ -6,9 +6,10 @@ package main
 
 import (
 	"9gel/gknot"
+	"fmt"
 )
 
 func main() {
-	puzzle := NewPuzzle()
+	puzzle := gknot.NewPuzzle()
 	fmt.Println(puzzle)
 }

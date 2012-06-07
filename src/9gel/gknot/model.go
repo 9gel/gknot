@@ -31,6 +31,8 @@
 // - The transformation matrix places the piece where they should be in 3-space.
 package gknot
 
+import "fmt"
+
 type PieceGeom [5][7]uint8
 type TransformMatrix [4][4]int
 type PieceDefinition struct {
@@ -45,13 +47,20 @@ type Piece struct {
 	Definition *PieceDefinition
 	Cells      PieceCells
 }
+type CellMap map[Cell] *Piece
 type Puzzle struct {
-	BluePiece   Piece
-	OrangePiece Piece
-	PurplePiece Piece
-	GreenPiece  Piece
-	RedPiece    Piece
-	YellowPiece Piece
+	BluePiece   *Piece
+	OrangePiece *Piece
+	PurplePiece *Piece
+	GreenPiece  *Piece
+	RedPiece    *Piece
+	YellowPiece *Piece
+	CellMap			CellMap
+}
+
+type OverlapError struct {
+	pieces []*Piece
+	cell   *Cell
 }
 
 var (
@@ -161,14 +170,14 @@ var (
 			{0, 0, 0, 1}}}
 )
 
-func (piece PieceDefinition) Piece() Piece {
+func (pieceDefn PieceDefinition) Piece() *Piece {
 	// Build list of cells.
 	numCells := 0
-	for _, row := range piece.Geom {
+	for _, row := range pieceDefn.Geom {
 		numCells += len(row)
 	}
 	pieceCells := make(PieceCells, 0, numCells)
-	for y, row := range piece.Geom {
+	for y, row := range pieceDefn.Geom {
 		for x, v := range row {
 			if v == 1 {
 				pieceCells = append(pieceCells, Cell{x, y, 0})
@@ -177,9 +186,9 @@ func (piece PieceDefinition) Piece() Piece {
 	}
 
 	// Transform the cells.
-	pieceCells.transform(&piece.Transform)
+	pieceCells.transform(&pieceDefn.Transform)
 
-	return Piece{&piece, pieceCells}
+	return &Piece{&pieceDefn, pieceCells}
 }
 
 func (pieceCells PieceCells) transform(transform *TransformMatrix) {
@@ -199,13 +208,36 @@ func (cell Cell) transform(transform *TransformMatrix) Cell {
 	return newCell
 }
 
+func (cellMap CellMap) add(pieces ...*Piece) {
+	for _, piece := range pieces {
+		for _, cell := range piece.Cells {
+			if existPiece, ok := cellMap[cell]; ok {
+				// Panic because the default puzzle should not have overlapping cells.
+				panic(&OverlapError{[]*Piece{piece, existPiece}, &cell})
+			}
+			cellMap[cell] = piece
+		}
+	}
+}
+
 func NewPuzzle() *Puzzle {
-	p := Puzzle{
-		BluePieceDef.Piece(),
-		OrangePieceDef.Piece(),
-		PurplePieceDef.Piece(),
-		GreenPieceDef.Piece(),
-		RedPieceDef.Piece(),
-		YellowPieceDef.Piece()}
-	return &p
+	// Build the cell map
+	bluePiece := BluePieceDef.Piece()
+	orangePiece := OrangePieceDef.Piece()
+	purplePiece := PurplePieceDef.Piece()
+	greenPiece := GreenPieceDef.Piece()
+	redPiece := RedPieceDef.Piece()
+	yellowPiece := YellowPieceDef.Piece()
+	cellMap := make(CellMap)
+	cellMap.add(bluePiece, orangePiece, purplePiece, greenPiece, redPiece, yellowPiece)
+
+	return &Puzzle{bluePiece, orangePiece, purplePiece, greenPiece, redPiece, yellowPiece, cellMap}
+}
+
+func (e *OverlapError) Error() string {
+	pieceNames := make([]string, len(e.pieces))
+	for i, piece := range e.pieces {
+		pieceNames[i] = piece.Definition.Name
+	}
+	return fmt.Sprintf("Overlapping pieces %v at %v", pieceNames, *e.cell)
 }
