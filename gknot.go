@@ -36,17 +36,29 @@ import (
 )
 
 type PieceGeom [5][7]uint8
-type TransformMatrix [4][4]int8
-type Piece struct {
-	EscColor uint8
-	Geom     PieceGeom
+type TransformMatrix [4][4]int
+type PieceDefinition struct {
+	EscColor  uint8
+	Geom      PieceGeom
 	Transform TransformMatrix
 }
-type Cell [3]int8
+type Cell [3]int
 type PieceCells []Cell
+type Piece struct {
+	Definition *PieceDefinition
+	Cells			 PieceCells
+}
+type Puzzle struct {
+	BluePiece   Piece
+	OrangePiece Piece
+	PurplePiece Piece
+	GreenPiece  Piece
+	RedPiece    Piece
+	YellowPiece Piece
+}
 
 var (
-	BluePiece = Piece{
+	BluePieceDef = PieceDefinition{
 		36,  // Cyan.
 		PieceGeom{
 			{1, 1, 1, 1, 1, 1, 1},
@@ -62,7 +74,7 @@ var (
 			{0, 0, -1, 2},
 			{0, 1, 0, 1},
 			{0, 0, 0, 1}}}
-	OrangePiece = Piece{
+	OrangePieceDef = PieceDefinition{
 		35,  // Magenta.
 		PieceGeom{
 			{1, 1, 1, 1, 1, 1, 1},
@@ -78,7 +90,7 @@ var (
 		  {0, 0, -1, 4},
 		  {0, 1, 0, 1},
 		  {0, 0, 0, 1}}}
-	PurplePiece = Piece{
+	PurplePieceDef = PieceDefinition{
 		34,  // Blue/Purple in Terminal.app.
 		PieceGeom{
 			{1, 1, 1, 1, 0, 1, 1},
@@ -94,7 +106,7 @@ var (
 			{0, 1, 0, 1},
 			{1, 0, 0, 0},
 			{0, 0, 0, 1}}}
-	GreenPiece = Piece{
+	GreenPieceDef = PieceDefinition{
 		32,
 		PieceGeom{
 			{1, 1, 1, 1, 1, 1, 1},
@@ -110,7 +122,7 @@ var (
 			{0, 1, 0, 1},
 			{1, 0, 0, 0},
 			{0, 0, 0, 1}}}
-	RedPiece = Piece{
+	RedPieceDef = PieceDefinition{
 		31,
 		PieceGeom{
 			{1, 1, 0, 1, 0, 1, 1},
@@ -127,7 +139,7 @@ var (
 			{-1, 0, 0, 6},
 			{0, 0, 1, 2},
 			{0, 0, 0, 1}}}
-	YellowPiece = Piece{
+	YellowPieceDef = PieceDefinition{
 		33,
 		PieceGeom{
 			{1, 1, 0, 1, 1, 1, 1},
@@ -146,7 +158,7 @@ var (
 			{0, 0, 0, 1}}}
 )
 
-func (piece Piece) Print() {
+func (piece PieceDefinition) Print() {
 	const block = '\u2588'
 	fmt.Printf("%c[0;%dm", '\x1b', piece.EscColor)
 	// Print higher index rows first since the coordinate has y axis going upwards.
@@ -163,28 +175,68 @@ func (piece Piece) Print() {
 	fmt.Printf("%c[0m", '\x1b')
 }
 
-func (piece Piece) PieceCells() PieceCells {
+func (piece PieceDefinition) Piece() Piece {
+	// Build list of cells.
 	numCells := 0
 	for _, row := range piece.Geom {
 		numCells += len(row)
 	}
-	pieceCells := make(PieceCells, numCells)
-	return pieceCells
+	pieceCells := make(PieceCells, 0, numCells)
+	for y, row := range piece.Geom {
+		for x, v := range row {
+			if v == 1 {
+				pieceCells = append(pieceCells, Cell{x, y, 0})
+			}
+		}
+	}
+
+	// Transform the cells.
+	pieceCells.transform(&piece.Transform)
+
+	return Piece{&piece, pieceCells}
+}
+
+func (pieceCells PieceCells) transform(transform *TransformMatrix) {
+	for i, cell := range pieceCells {
+		pieceCells[i] = cell.transform(transform)
+	}
+}
+
+func (cell Cell) transform(transform *TransformMatrix) Cell {
+	newCell := Cell{0, 0, 0}
+	for i := 0; i < 3; i++ {
+		for j := 0; j < 3; j++ {
+			newCell[i] += transform[i][j] * cell[j]
+		}
+		newCell[i] += transform[i][3]
+	}
+	return newCell
+}
+
+func NewPuzzle() *Puzzle {
+	p := Puzzle{
+		BluePieceDef.Piece(),
+		OrangePieceDef.Piece(),
+		PurplePieceDef.Piece(),
+		GreenPieceDef.Piece(),
+		RedPieceDef.Piece(),
+		YellowPieceDef.Piece()}
+	return &p
 }
 
 func main() {
-	BluePiece.Print()
+	BluePieceDef.Print()
 	fmt.Println()
-	OrangePiece.Print()
+	OrangePieceDef.Print()
 	fmt.Println()
-	PurplePiece.Print()
+	PurplePieceDef.Print()
 	fmt.Println()
-	GreenPiece.Print()
+	GreenPieceDef.Print()
 	fmt.Println()
-	RedPiece.Print()
+	RedPieceDef.Print()
 	fmt.Println()
-	YellowPiece.Print()
+	YellowPieceDef.Print()
 
-	blueCells := BluePiece.PieceCells()
-	fmt.Println(blueCells)
+	puzzle := NewPuzzle()
+	fmt.Println(puzzle)
 }
