@@ -22,8 +22,48 @@ func (piece PieceDefinition) Print() {
 	fmt.Printf("%c[0m\n", esc)
 }
 
-// Outputs the puzzle in 3 planar projections, along the x-y, y-z and x-z planes.
+type Coords2D [2]int
+type ProjectInfo struct {
+	Depth int
+	*Piece
+}
+type ProjectedCells map[Coords2D] ProjectInfo
+type Axis int
+const (
+	X = Axis(0)
+	Y = Axis(1)
+	Z = Axis(2)
+)
+
+func ProjectPuzzle(axis1, axis2 Axis, puzzle Puzzle) ProjectedCells {
+	return ProjectPieces(axis1, axis2, puzzle.BluePiece, puzzle.OrangePiece, puzzle.PurplePiece, puzzle.GreenPiece, puzzle.RedPiece, puzzle.YellowPiece)
+}
+
+func ProjectPieces(axis1, axis2 Axis, pieces ...*Piece) ProjectedCells {
+	axisDepth := 3 - axis1 - axis2
+	projected := make(ProjectedCells)
+	for _, piece := range pieces {
+		for _, cell := range piece.Cells {
+			coords := Coords2D{cell[axis1], cell[axis2]}
+			existing, ok := projected[coords]
+			if ok && existing.Depth > cell[axisDepth] {
+				continue
+			}
+			projected[coords] = ProjectInfo{cell[axisDepth], piece}
+		}
+	}
+	return projected
+}
+
+// Outputs the puzzle in 3 planar projections, along the planes:
+// - x-y: x to the right, y upwards
+// - y-z: y upwards, z to the left
+// - x-z: x to the right, z downwards
 func (puzzle Puzzle) Print() {
-	fmt.Print(puzzle)
-	fmt.Println()
+	xyProjected := ProjectPuzzle(X, Y, puzzle)
+	yzProjected := ProjectPuzzle(Y, Z, puzzle)
+	xzProjected := ProjectPuzzle(X, Z, puzzle)
+	fmt.Println(xyProjected)
+	fmt.Println(yzProjected)
+	fmt.Println(xzProjected)
 }
