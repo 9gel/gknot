@@ -1,7 +1,7 @@
 // Author: nigelchoi@google.com (Nigel Choi)
 
 // Representation Thinkfun's Gordion Knot.
-// When assembled, orient the cube like the picture on the packaging. Imagine
+// When assembled, orient the cube like follows. Imagine
 // an isometriclly projected cube on a right-handed coordinate system:
 //
 // - Blue (Cyan) piece parallel to table at the bottom.
@@ -47,7 +47,7 @@ type Piece struct {
 	Definition *PieceDefinition
 	Cells      PieceCells
 }
-type CellMap map[Cell] *Piece
+type CellMap map[Cell]*Piece
 type Puzzle struct {
 	BluePiece   *Piece
 	OrangePiece *Piece
@@ -55,7 +55,7 @@ type Puzzle struct {
 	GreenPiece  *Piece
 	RedPiece    *Piece
 	YellowPiece *Piece
-	CellMap			CellMap
+	CellMap     CellMap
 }
 
 type OverlapError struct {
@@ -66,7 +66,7 @@ type OverlapError struct {
 var (
 	BluePieceDef = PieceDefinition{
 		"Blue",
-		36,  // Cyan.
+		36, // Cyan.
 		PieceGeom{
 			{1, 1, 1, 1, 1, 1, 1},
 			{1, 0, 0, 0, 0, 0, 1},
@@ -83,7 +83,7 @@ var (
 			{0, 0, 0, 1}}}
 	OrangePieceDef = PieceDefinition{
 		"Orange",
-		35,  // Magenta.
+		35, // Magenta.
 		PieceGeom{
 			{1, 1, 1, 1, 1, 1, 1},
 			{1, 0, 0, 0, 0, 0, 1},
@@ -95,12 +95,12 @@ var (
 		// Translate along z by 1.
 		TransformMatrix{
 			{1, 0, 0, 0},
-		  {0, 0, -1, 4},
-		  {0, 1, 0, 1},
-		  {0, 0, 0, 1}}}
+			{0, 0, -1, 4},
+			{0, 1, 0, 1},
+			{0, 0, 0, 1}}}
 	PurplePieceDef = PieceDefinition{
 		"Purple",
-		34,  // Blue/Purple in Terminal.app.
+		34, // Blue/Purple in Terminal.app.
 		PieceGeom{
 			{1, 1, 1, 1, 0, 1, 1},
 			{1, 0, 0, 0, 0, 0, 1},
