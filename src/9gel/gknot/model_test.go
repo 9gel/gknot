@@ -2,7 +2,7 @@ package gknot
 
 import "testing"
 
-func checkPiece(t *testing.T, piece Piece, expected PieceCells) {
+func checkPiece(t *testing.T, piece *Piece, expected PieceCells) {
 	for i, cell := range piece.Cells {
 		if cell != expected[i] {
 			t.Errorf("%v piece[%v] = %v, expected %v", piece.Definition.Name, i, cell, expected[i])
