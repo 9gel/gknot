@@ -2,10 +2,13 @@ package gknot
 
 import "fmt"
 
+const (
+	block = '\u2588'
+	esc = '\x1b'
+)
+
 // Prints a piece laid flat.
 func (piece PieceDefinition) Print() {
-	const block = '\u2588'
-	const esc = '\x1b'
 	fmt.Printf("%c[1;%dm%v%c[0m piece:\n", esc, piece.EscColor, piece.Name, esc)
 	fmt.Printf("%c[0;%dm", esc, piece.EscColor)
 	// Print higher index rows first since the coordinate has y axis going upwards.
@@ -23,11 +26,11 @@ func (piece PieceDefinition) Print() {
 }
 
 type Coords2D [2]int
-type ProjectInfo struct {
+type ProjectedCell struct {
 	Depth int
 	*Piece
 }
-type ProjectedCells map[Coords2D] ProjectInfo
+type ProjectedCells map[Coords2D] ProjectedCell
 type Axis int
 const (
 	X = Axis(0)
@@ -35,27 +38,58 @@ const (
 	Z = Axis(2)
 )
 
+// 2x3 matrix.
+type Transform2D [2][3]int
+
 func ProjectPuzzle(axis1, axis2 Axis, puzzle Puzzle) ProjectedCells {
 	return ProjectPieces(axis1, axis2, puzzle.BluePiece, puzzle.OrangePiece, puzzle.PurplePiece, puzzle.GreenPiece, puzzle.RedPiece, puzzle.YellowPiece)
 }
 
 func ProjectPieces(axis1, axis2 Axis, pieces ...*Piece) ProjectedCells {
-	axisDepth := 3 - axis1 - axis2
+	depthAxis := 3 - axis1 - axis2
 	projected := make(ProjectedCells)
 	for _, piece := range pieces {
 		for _, cell := range piece.Cells {
 			coords := Coords2D{cell[axis1], cell[axis2]}
 			existing, ok := projected[coords]
-			if ok && existing.Depth > cell[axisDepth] {
+			if ok && existing.Depth > cell[depthAxis] {
 				continue
 			}
-			projected[coords] = ProjectInfo{cell[axisDepth], piece}
+			projected[coords] = ProjectedCell{cell[depthAxis], piece}
 		}
 	}
 	return projected
 }
 
-// Outputs the puzzle in 3 planar projections, along the planes:
+func (projected ProjectedCells) axesMax() (axis1Max, axis2Max int) {
+  axis1Max = -20
+	axis2Max = -20
+  for coords := range projected {
+    if coords[0] > axis1Max {
+      axis1Max = coords[0]
+    }
+    if coords[1] > axis2Max {
+      axis2Max = coords[1]
+    }
+  }
+	return
+}
+
+// Transforms the cells using the transformation and add to screenCells.
+func (screenCells ProjectedCells) transformAndAddCells(transform Transform2D, cells ProjectedCells) {
+	for cellCoords, cell := range cells {
+		var screenCoords Coords2D
+		for axis, row := range transform {
+			for i, v := range cellCoords {
+				screenCoords[axis] += row[i] * v
+			}
+			screenCoords[axis] += row[2]
+		}
+		screenCells[screenCoords] = cell
+	}
+}
+
+// Outputs the puzzle in 3 projections, along the planes:
 // - x-y: x to the right, y upwards
 // - y-z: y upwards, z to the left
 // - x-z: x to the right, z downwards
@@ -63,7 +97,43 @@ func (puzzle Puzzle) Print() {
 	xyProjected := ProjectPuzzle(X, Y, puzzle)
 	yzProjected := ProjectPuzzle(Y, Z, puzzle)
 	xzProjected := ProjectPuzzle(X, Z, puzzle)
-	fmt.Println(xyProjected)
-	fmt.Println(yzProjected)
-	fmt.Println(xzProjected)
+
+  // The terminal prints from top left to bottom right. i.e. the
+  // coordinate system is x-y where x axis goes to the right and
+  // y axis goes downwards, starting at (0,0). Translate and reflect the
+  // 2D projections to this coordinate system and print.
+  // Print all 3 projections side-by-side, each occupying at most 20 spaces
+  // along the x axis, 60 spaces in total. They will occupy at most 20 
+  // spaces down the y axis.
+	screenCells := make(ProjectedCells)
+
+	_, xyMaxY := xyProjected.axesMax()
+  screenCells.transformAndAddCells(Transform2D{
+    {1, 0, 0},
+    {0, -1, xyMaxY}}, xyProjected)
+
+	yzMaxY, yzMaxZ := yzProjected.axesMax()
+	screenCells.transformAndAddCells(Transform2D{
+		{0, -1, yzMaxZ + 20},
+		{-1, 0, yzMaxY}}, yzProjected)
+
+	screenCells.transformAndAddCells(Transform2D{
+		{1, 0, 40},
+		{0, 1, 0}}, xzProjected)
+
+	screenMaxX, screenMaxY := screenCells.axesMax()
+	fmt.Printf("x-y%37cy-z%37cx-z\n", ' ', ' ')
+	for y := 0; y <= screenMaxY; y++ {
+		spacer := ""
+		for x := 0; x <= screenMaxX; x++ {
+			cell, ok := screenCells[Coords2D{x, y}]
+			if ok {
+				fmt.Printf("%v%c[1;%dm%c%c%c[0m", spacer, esc, cell.Piece.Definition.EscColor, block, block, esc)
+				spacer = ""
+			} else {
+				spacer += "  "
+			}
+		}
+		fmt.Println()
+	}
 }

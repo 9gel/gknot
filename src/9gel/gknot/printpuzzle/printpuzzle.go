@@ -9,6 +9,5 @@ import (
 )
 
 func main() {
-	puzzle := gknot.NewPuzzle()
-	puzzle.Print()
+	gknot.NewPuzzle().Print()
 }
