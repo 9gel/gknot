@@ -122,13 +122,13 @@ func (puzzle Puzzle) Print() {
 		{0, 1, 0}}, xzProjected)
 
 	screenMaxX, screenMaxY := screenCells.axesMax()
-	fmt.Printf("x-y%37cy-z%37cx-z\n", ' ', ' ')
+	fmt.Printf("%c[1mx-y%37cy-z%37cx-z%c[0m\n", esc, ' ', ' ', esc)
 	for y := 0; y <= screenMaxY; y++ {
 		spacer := ""
 		for x := 0; x <= screenMaxX; x++ {
 			cell, ok := screenCells[Coords2D{x, y}]
 			if ok {
-				fmt.Printf("%v%c[1;%dm%c%c%c[0m", spacer, esc, cell.Piece.Definition.EscColor, block, block, esc)
+				fmt.Printf("%v%c[0;%dm%c%c%c[0m", spacer, esc, cell.Piece.Definition.EscColor, block, block, esc)
 				spacer = ""
 			} else {
 				spacer += "  "
