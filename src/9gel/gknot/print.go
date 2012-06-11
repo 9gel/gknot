@@ -42,13 +42,9 @@ const (
 type Transform2D [2][3]int
 
 func ProjectPuzzle(axis1, axis2 Axis, puzzle Puzzle) ProjectedCells {
-	return ProjectPieces(axis1, axis2, puzzle.BluePiece, puzzle.OrangePiece, puzzle.PurplePiece, puzzle.GreenPiece, puzzle.RedPiece, puzzle.YellowPiece)
-}
-
-func ProjectPieces(axis1, axis2 Axis, pieces ...*Piece) ProjectedCells {
 	depthAxis := 3 - axis1 - axis2
 	projected := make(ProjectedCells)
-	for _, piece := range pieces {
+	for _, piece := range puzzle.Pieces {
 		for _, cell := range piece.Cells {
 			coords := Coords2D{cell[axis1], cell[axis2]}
 			existing, ok := projected[coords]

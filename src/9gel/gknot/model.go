@@ -49,13 +49,8 @@ type Piece struct {
 }
 type CellMap map[Cell]*Piece
 type Puzzle struct {
-	BluePiece   *Piece
-	OrangePiece *Piece
-	PurplePiece *Piece
-	GreenPiece  *Piece
-	RedPiece    *Piece
-	YellowPiece *Piece
-	CellMap     CellMap
+	Pieces  []*Piece
+	CellMap
 }
 
 type OverlapError struct {
@@ -228,10 +223,11 @@ func NewPuzzle() *Puzzle {
 	greenPiece := GreenPieceDef.Piece()
 	redPiece := RedPieceDef.Piece()
 	yellowPiece := YellowPieceDef.Piece()
+	pieces := []*Piece{bluePiece, orangePiece, purplePiece, greenPiece, redPiece, yellowPiece}
 	cellMap := make(CellMap)
 	cellMap.add(bluePiece, orangePiece, purplePiece, greenPiece, redPiece, yellowPiece)
 
-	return &Puzzle{bluePiece, orangePiece, purplePiece, greenPiece, redPiece, yellowPiece, cellMap}
+	return &Puzzle{pieces, cellMap}
 }
 
 func (e *OverlapError) Error() string {
