@@ -33,20 +33,35 @@ package gknot
 
 import "fmt"
 
+// A piece is defined by 5x7 matrix PieceGeom since each piece is 5 cells by
+// 7 cells. It is done this way because the literal defining the piece will look
+// just like the piece, instead of being a bunch of coordinates. The piece is
+// laid flat on the x-y plane where x axis extends right
+// and y axis extends upwards, starting at (0, 0) . PieceGeom[y][x] == 1 means
+// there is a solid at (x, y); PieceGeom[y][x] == 0 means there's a void. Other
+// values are invalid. The piece is also defined by a transformation matrix
+// to transform it from the x-y plane to the starting position in the puzzle
+// in 3 space.
 type PieceGeom [5][7]uint8
 type TransformMatrix [4][4]int
 type PieceDefinition struct {
 	Name      string
-	EscColor  uint8
+	EscColor  uint8  // The ANSI escape color for printing in terminal.
 	Geom      PieceGeom
 	Transform TransformMatrix
 }
+
+// Piece represents a piece as a set of coordinates of its solid cells.
+// Cells[0] is always the (0, 0) cell in the PieceDefinition.
 type Cell [3]int
-type PieceCells []Cell
+type Cells []Cell
 type Piece struct {
 	Definition *PieceDefinition
-	Cells      PieceCells
+	Cells
 }
+
+// A Puzzle contains a list of pieces still entangled (not freed) and a
+// map of all the solid cells to their pieces.
 type CellMap map[Cell]*Piece
 type Puzzle struct {
 	Pieces  []*Piece
@@ -171,24 +186,24 @@ func (pieceDefn PieceDefinition) Piece() *Piece {
 	for _, row := range pieceDefn.Geom {
 		numCells += len(row)
 	}
-	pieceCells := make(PieceCells, 0, numCells)
+	cells := make(Cells, 0, numCells)
 	for y, row := range pieceDefn.Geom {
 		for x, v := range row {
 			if v == 1 {
-				pieceCells = append(pieceCells, Cell{x, y, 0})
+				cells = append(cells, Cell{x, y, 0})
 			}
 		}
 	}
 
 	// Transform the cells.
-	pieceCells.transform(&pieceDefn.Transform)
+	cells.transform(&pieceDefn.Transform)
 
-	return &Piece{&pieceDefn, pieceCells}
+	return &Piece{&pieceDefn, cells}
 }
 
-func (pieceCells PieceCells) transform(transform *TransformMatrix) {
-	for i, cell := range pieceCells {
-		pieceCells[i] = cell.transform(transform)
+func (cells Cells) transform(transform *TransformMatrix) {
+	for i, cell := range cells {
+		cells[i] = cell.transform(transform)
 	}
 }
 
