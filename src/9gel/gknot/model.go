@@ -60,17 +60,43 @@ type Piece struct {
 	Cells
 }
 
-// A Puzzle contains a list of pieces still entangled (not freed) and a
-// map of all the solid cells to their pieces.
+// Puzzle represents the current state of all the Pieces still entangled.
 type CellMap map[Cell]*Piece
 type Puzzle struct {
-	Pieces  []*Piece
-	CellMap
+	Pieces  []*Piece // Source of truth of the pieces. All other fields in Puzzle must be consistent with this field.
+	CellMap // For looking up the Piece that a cell belongs to.
 }
 
+// Error for when two pieces occupy the same cell.
 type OverlapError struct {
 	pieces []*Piece
 	cell   *Cell
+}
+
+func (e *OverlapError) Error() string {
+	pieceNames := make([]string, len(e.pieces))
+	for i, piece := range e.pieces {
+		pieceNames[i] = piece.Definition.Name
+	}
+	return fmt.Sprintf("Overlapping pieces %v at %v.", pieceNames, *e.cell)
+}
+
+// Error for when two pieces have the same name.
+type SameNameError struct {
+	PieceName string
+}
+
+func (e *SameNameError) Error() string {
+	return fmt.Sprintf("More than one piece with the same name %v.", e.PieceName)
+}
+
+// Error for when two pieces have the same ANSI escape color.
+type SameEscColorError struct {
+	EscColor uint8
+}
+
+func (e *SameEscColorError) Error() string {
+	return fmt.Sprintf("More than one piece with the same ANSI Esc color %v.", e.EscColor)
 }
 
 var (
@@ -218,37 +244,40 @@ func (cell Cell) transform(transform *TransformMatrix) Cell {
 	return newCell
 }
 
-func (cellMap CellMap) add(pieces ...*Piece) {
+func (puzzle *Puzzle) add(pieces ...*Piece) {
+	nameSet := make(map[string] bool)
+	escColorSet := make(map[uint8] bool)
 	for _, piece := range pieces {
 		for _, cell := range piece.Cells {
-			if existPiece, ok := cellMap[cell]; ok {
+			if existPiece, ok := puzzle.CellMap[cell]; ok {
 				// Panic because the default puzzle should not have overlapping cells.
 				panic(&OverlapError{[]*Piece{piece, existPiece}, &cell})
 			}
-			cellMap[cell] = piece
+			if _, ok := nameSet[piece.Definition.Name]; ok {
+				// Panic because the default puzzle should not have pieces with the
+				// same names.
+				panic(&SameNameError{piece.Definition.Name})
+			}
+			if _, ok := escColorSet[piece.Definition.EscColor]; ok {
+				// Panic because the default puzzle should not have pieces with the
+				// same esc color.
+				panic(&SameEscColorError{piece.Definition.EscColor})
+			}
+			puzzle.Pieces = append(puzzle.Pieces, piece)
+			puzzle.CellMap[cell] = piece
 		}
 	}
 }
 
 func NewPuzzle() *Puzzle {
-	// Build the cell map
-	bluePiece := BluePieceDef.Piece()
-	orangePiece := OrangePieceDef.Piece()
-	purplePiece := PurplePieceDef.Piece()
-	greenPiece := GreenPieceDef.Piece()
-	redPiece := RedPieceDef.Piece()
-	yellowPiece := YellowPieceDef.Piece()
-	pieces := []*Piece{bluePiece, orangePiece, purplePiece, greenPiece, redPiece, yellowPiece}
-	cellMap := make(CellMap)
-	cellMap.add(bluePiece, orangePiece, purplePiece, greenPiece, redPiece, yellowPiece)
-
-	return &Puzzle{pieces, cellMap}
+	puzzle := &Puzzle{make([]*Piece, 0, 6), make(CellMap)}
+	puzzle.add(BluePieceDef.Piece(),
+		OrangePieceDef.Piece(),
+		PurplePieceDef.Piece(),
+		GreenPieceDef.Piece(),
+		RedPieceDef.Piece(),
+		YellowPieceDef.Piece())
+	return puzzle
 }
 
-func (e *OverlapError) Error() string {
-	pieceNames := make([]string, len(e.pieces))
-	for i, piece := range e.pieces {
-		pieceNames[i] = piece.Definition.Name
-	}
-	return fmt.Sprintf("Overlapping pieces %v at %v", pieceNames, *e.cell)
-}
+
