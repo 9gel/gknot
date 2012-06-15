@@ -1,6 +1,9 @@
 package gknot
 
-import "testing"
+import (
+	"reflect"
+	"testing"
+)
 
 func checkPiece(t *testing.T, piece *Piece, expected Cells) {
 	for i, cell := range piece.Cells {
@@ -62,4 +65,44 @@ func TestYellowPiece_cells(t *testing.T) {
 		{3,6,4},{3,5,4},        {3,3,4},{3,2,4},{3,1,4},{3,0,4},
 		{4,6,4},                                        {4,0,4},
 		{5,6,4},{5,5,4},{5,4,4},{5,3,4},{5,2,4},{5,1,4},{5,0,4}})
+}
+
+func TestOverlapError(t *testing.T) {
+	badRedPiece := PieceDefinition{
+		"Red",
+		31,
+		PieceGeom{
+			{1, 1, 0, 1, 0, 1, 1},
+			{1, 0, 0, 1, 0, 0, 1},
+			{1, 1, 1, 1, 1, 1, 1},
+			{1, 1, 0, 0, 0, 0, 1},
+			{1, 1, 1, 1, 0, 1, 1}},
+		// Same transform as RedPiece.
+		TransformMatrix{
+			{0, 1, 0, 1},
+			{-1, 0, 0, 6},
+			{0, 0, 1, 2},
+			{0, 0, 0, 1}}}
+	puzzle := &Puzzle{make([]*Piece, 0, 6), make(CellMap)}
+
+	defer func() {
+		if err := recover(); err != nil {
+			overlapErr, ok := err.(*OverlapError)
+			if !ok {
+				t.Fatalf("Expected OverlapError, actual %v.", reflect.TypeOf(overlapErr))
+			}
+			if piecesLen := len(overlapErr.pieces); piecesLen != 2 {
+				t.Fatalf("OverlapError has incorrect number of pieces: expected 2, actual %v.", piecesLen)
+			}
+			expectedCell := Cell{4, 5, 2}
+			if overlapCell := overlapErr.cell; *overlapCell != expectedCell {
+				t.Fatalf("OverlapError has incorrect overlap cell; expected %v, actual %v.", expectedCell, overlapCell)
+			}
+			if errMsg := overlapErr.Error(); errMsg != "Overlapping pieces [Red Green] at [4 5 2]." {
+				t.Fatalf("Incorrect error message for OverlapError; actual message '%v'.", errMsg)
+			}
+		}
+	}()
+	puzzle.add(GreenPieceDef.Piece(), badRedPiece.Piece())
+	t.Fatal("Should have paniked with OverlapError since two pieces overlap.")
 }
