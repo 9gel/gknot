@@ -119,6 +119,7 @@ func (puzzle Puzzle) Print() {
 		{0, 1, 0}}, xzProjected)
 
 	screenMaxX, screenMaxY := screenCells.axesMax()
+	fmt.Printf("= %c[1;31m%v%c[0m =\n", esc, puzzle.StateID(), esc)
 	fmt.Printf("%c[1mx-y%37cy-z%37cx-z%c[0m\n", esc, ' ', ' ', esc)
 	for y := 0; y <= screenMaxY; y++ {
 		spacer := ""

@@ -106,3 +106,43 @@ func TestOverlapError(t *testing.T) {
 	puzzle.add(GreenPieceDef.Piece(), badRedPiece.Piece())
 	t.Fatal("Should have paniked with OverlapError since two pieces overlap.")
 }
+
+func TestNewPuzzle(t *testing.T) {
+	puzzle := NewPuzzle()
+	if numPieces := len(puzzle.Pieces); numPieces != 6 {
+		t.Fatalf("New puzzle should 6 pieces, %v found.", numPieces)
+	}
+}
+
+func TestStateID(t *testing.T) {
+	origPuzzle := NewPuzzle()
+	origStateID := origPuzzle.StateID()
+	if origStateID != "3E480234" {
+		t.Fatalf("New puzzle should have state ID 3E480234, actual %v", origStateID)
+	}
+	// Create a new puzzle with all pieces translated the same way.
+	newPuzzle := &Puzzle{make([]*Piece, 0, 6), make(CellMap)}
+	translate := &TransformMatrix{
+		{1, 0, 0, -4},
+		{0, 1, 0, -3},
+		{0, 0, 1, -2},
+		{0, 0, 0, 1}}
+	newBluePiece := BluePieceDef.Piece(); newBluePiece.Cells.transform(translate)
+	newOrangePiece := OrangePieceDef.Piece(); newOrangePiece.Cells.transform(translate)
+	newPurplePiece := PurplePieceDef.Piece(); newPurplePiece.Cells.transform(translate)
+	newGreenPiece := GreenPieceDef.Piece(); newGreenPiece.Cells.transform(translate)
+	newRedPiece := RedPieceDef.Piece(); newRedPiece.Cells.transform(translate)
+	newYellowPiece := YellowPieceDef.Piece(); newYellowPiece.Cells.transform(translate)
+	newPuzzle.add(newBluePiece,
+		newOrangePiece,
+		newPurplePiece,
+		newGreenPiece,
+		newRedPiece,
+		newYellowPiece)
+	if newStateID := origPuzzle.StateID(); newStateID != origStateID {
+		t.Fatalf("Original puzzle state modified, should be %v, actual %v", origStateID, newStateID)
+	}
+	if newStateID := newPuzzle.StateID(); newStateID != origStateID {
+		t.Fatalf("New puzzle should have same state %v, actual %v", origStateID, newStateID)
+	}
+}

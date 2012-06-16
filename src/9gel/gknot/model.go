@@ -31,7 +31,10 @@
 // - The transformation matrix places the piece where they should be in 3-space.
 package gknot
 
-import "fmt"
+import (
+	"hash/fnv"
+	"fmt"
+)
 
 // A piece is defined by 5x7 matrix PieceGeom since each piece is 5 cells by
 // 7 cells. It is done this way because the literal defining the piece will look
@@ -46,7 +49,7 @@ type PieceGeom [5][7]uint8
 type TransformMatrix [4][4]int
 type PieceDefinition struct {
 	Name      string
-	EscColor  uint8  // The ANSI escape color for printing in terminal.
+	EscColor  uint8 // The ANSI escape color for printing in terminal.
 	Geom      PieceGeom
 	Transform TransformMatrix
 }
@@ -64,7 +67,7 @@ type Piece struct {
 type CellMap map[Cell]*Piece
 type Puzzle struct {
 	Pieces  []*Piece // Source of truth of the pieces. All other fields in Puzzle must be consistent with this field.
-	CellMap // For looking up the Piece that a cell belongs to.
+	CellMap          // For looking up the Piece that a cell belongs to.
 }
 
 // Error for when two pieces occupy the same cell.
@@ -245,8 +248,8 @@ func (cell Cell) transform(transform *TransformMatrix) Cell {
 }
 
 func (puzzle *Puzzle) add(pieces ...*Piece) {
-	nameSet := make(map[string] bool)
-	escColorSet := make(map[uint8] bool)
+	nameSet := make(map[string]bool)
+	escColorSet := make(map[uint8]bool)
 	for _, piece := range pieces {
 		for _, cell := range piece.Cells {
 			if existPiece, ok := puzzle.CellMap[cell]; ok {
@@ -263,9 +266,9 @@ func (puzzle *Puzzle) add(pieces ...*Piece) {
 				// same esc color.
 				panic(&SameEscColorError{piece.Definition.EscColor})
 			}
-			puzzle.Pieces = append(puzzle.Pieces, piece)
 			puzzle.CellMap[cell] = piece
 		}
+		puzzle.Pieces = append(puzzle.Pieces, piece)
 	}
 }
 
@@ -280,4 +283,40 @@ func NewPuzzle() *Puzzle {
 	return puzzle
 }
 
+func (puzzle Puzzle) StateID() string {
+	// Find the min x, min y and min z and move the puzzle to have min x, min y and min z == 0.
+	// Calculate ID for each piece and concatenate.
+	minX := 30
+	minY := minX
+	minZ := minY
+	for cell := range puzzle.CellMap {
+		if minX > cell[0] {
+			minX = cell[0]
+		}
+		if minY > cell[1] {
+			minY = cell[1]
+		}
+		if minZ > cell[2] {
+			minZ = cell[2]
+		}
+	}
+	hash := fnv.New32()
+	for _, piece := range puzzle.Pieces {
+		hash.Write(piece.stateID(-minX, -minY, -minZ))
+	}
+	return fmt.Sprintf("%X", hash.Sum32())
+}
 
+func (piece Piece) stateID(shiftX, shiftY, shiftZ int) []byte {
+	id := make([]byte, 0, 7)
+	firstCell := piece.Cells[0]
+	lastCell := piece.Cells[len(piece.Cells)-1]
+	id = append(id, byte(piece.Definition.EscColor),
+		byte(firstCell[0] + shiftX),
+		byte(firstCell[1] + shiftY),
+		byte(firstCell[2] + shiftZ),
+		byte(lastCell[0] + shiftX),
+		byte(lastCell[1] + shiftY),
+		byte(lastCell[2] + shiftZ))
+	return id
+}
