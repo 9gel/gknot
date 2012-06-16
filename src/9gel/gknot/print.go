@@ -4,7 +4,7 @@ import "fmt"
 
 const (
 	block = '\u2588'
-	esc = '\x1b'
+	esc   = '\x1b'
 )
 
 // Prints a piece laid flat.
@@ -12,7 +12,7 @@ func (piece PieceDefinition) Print() {
 	fmt.Printf("%c[1;%dm%v%c[0m piece:\n", esc, piece.EscColor, piece.Name, esc)
 	fmt.Printf("%c[0;%dm", esc, piece.EscColor)
 	// Print higher index rows first since the coordinate has y axis going upwards.
-	for i := len(piece.Geom)-1; i >= 0; i-- {
+	for i := len(piece.Geom) - 1; i >= 0; i-- {
 		for _, v := range piece.Geom[i] {
 			if v == 1 {
 				fmt.Printf("%c%c", block, block)
@@ -30,8 +30,9 @@ type ProjectedCell struct {
 	Depth int
 	*Piece
 }
-type ProjectedCells map[Coords2D] ProjectedCell
+type ProjectedCells map[Coords2D]ProjectedCell
 type Axis int
+
 const (
 	X = Axis(0)
 	Y = Axis(1)
@@ -58,16 +59,16 @@ func ProjectPuzzle(axis1, axis2 Axis, puzzle Puzzle) ProjectedCells {
 }
 
 func (projected ProjectedCells) axesMax() (axis1Max, axis2Max int) {
-  axis1Max = -20
+	axis1Max = -20
 	axis2Max = -20
-  for coords := range projected {
-    if coords[0] > axis1Max {
-      axis1Max = coords[0]
-    }
-    if coords[1] > axis2Max {
-      axis2Max = coords[1]
-    }
-  }
+	for coords := range projected {
+		if coords[0] > axis1Max {
+			axis1Max = coords[0]
+		}
+		if coords[1] > axis2Max {
+			axis2Max = coords[1]
+		}
+	}
 	return
 }
 
@@ -94,19 +95,19 @@ func (puzzle Puzzle) Print() {
 	yzProjected := ProjectPuzzle(Y, Z, puzzle)
 	xzProjected := ProjectPuzzle(X, Z, puzzle)
 
-  // The terminal prints from top left to bottom right. i.e. the
-  // coordinate system is x-y where x axis goes to the right and
-  // y axis goes downwards, starting at (0,0). Translate and reflect the
-  // 2D projections to this coordinate system and print.
-  // Print all 3 projections side-by-side, each occupying at most 20 spaces
-  // along the x axis, 60 spaces in total. They will occupy at most 20 
-  // spaces down the y axis.
+	// The terminal prints from top left to bottom right. i.e. the
+	// coordinate system is x-y where x axis goes to the right and
+	// y axis goes downwards, starting at (0,0). Translate and reflect the
+	// 2D projections to this coordinate system and print.
+	// Print all 3 projections side-by-side, each occupying at most 20 spaces
+	// along the x axis, 60 spaces in total. They will occupy at most 20 
+	// spaces down the y axis.
 	screenCells := make(ProjectedCells)
 
 	_, xyMaxY := xyProjected.axesMax()
-  screenCells.transformAndAddCells(Transform2D{
-    {1, 0, 0},
-    {0, -1, xyMaxY}}, xyProjected)
+	screenCells.transformAndAddCells(Transform2D{
+		{1, 0, 0},
+		{0, -1, xyMaxY}}, xyProjected)
 
 	yzMaxY, yzMaxZ := yzProjected.axesMax()
 	screenCells.transformAndAddCells(Transform2D{
