@@ -32,8 +32,9 @@
 package gknot
 
 import (
-	"hash/fnv"
 	"fmt"
+	"hash/fnv"
+	"sort"
 )
 
 // A piece is defined by 5x7 matrix PieceGeom since each piece is 5 cells by
@@ -49,7 +50,8 @@ type PieceGeom [5][7]uint8
 type TransformMatrix [4][4]int
 type PieceDefinition struct {
 	Name      string
-	EscColor  uint8 // The ANSI escape color for printing in terminal.
+	// The ANSI escape color for printing in terminal. Also used as the ID of the piece.
+	EscColor  uint8
 	Geom      PieceGeom
 	Transform TransformMatrix
 }
@@ -63,16 +65,25 @@ type Piece struct {
 	Cells
 }
 
+type Pieces []*Piece
+
 // Puzzle represents the current state of all the Pieces still entangled.
 type CellMap map[Cell]*Piece
 type Puzzle struct {
-	Pieces  []*Piece // Source of truth of the pieces. All other fields in Puzzle must be consistent with this field.
-	CellMap          // For looking up the Piece that a cell belongs to.
+	// Source of truth of the pieces. All other fields in Puzzle must be consistent with this field.
+	// The key is the EscColor of the piece.
+	Pieces  map[uint8]*Piece
+	// For looking up the Piece that a cell belongs to.
+	CellMap
+}
+
+// Models a mutation to a Puzzle.
+type Mutation struct {
 }
 
 // Error for when two pieces occupy the same cell.
 type OverlapError struct {
-	pieces []*Piece
+	pieces Pieces
 	cell   *Cell
 }
 
@@ -268,12 +279,12 @@ func (puzzle *Puzzle) add(pieces ...*Piece) {
 			}
 			puzzle.CellMap[cell] = piece
 		}
-		puzzle.Pieces = append(puzzle.Pieces, piece)
+		puzzle.Pieces[piece.Definition.EscColor] = piece
 	}
 }
 
 func NewPuzzle() *Puzzle {
-	puzzle := &Puzzle{make([]*Piece, 0, 6), make(CellMap)}
+	puzzle := &Puzzle{make(map[uint8]*Piece, 6), make(CellMap)}
 	puzzle.add(BluePieceDef.Piece(),
 		OrangePieceDef.Piece(),
 		PurplePieceDef.Piece(),
@@ -282,6 +293,13 @@ func NewPuzzle() *Puzzle {
 		YellowPieceDef.Piece())
 	return puzzle
 }
+
+func (p Pieces) Len() int { return len(p) }
+func (p Pieces) Swap(i, j int) { p[i], p[j] = p[j], p[i] }
+
+type ByEscColor struct { Pieces }
+
+func (p ByEscColor) Less(i, j int) bool { return p.Pieces[i].Definition.EscColor < p.Pieces[j].Definition.EscColor }
 
 func (puzzle Puzzle) StateID() string {
 	// Find the min x, min y and min z and move the puzzle to have min x, min y and min z == 0.
@@ -300,8 +318,13 @@ func (puzzle Puzzle) StateID() string {
 			minZ = cell[2]
 		}
 	}
-	hash := fnv.New32()
+	pieces := make(Pieces, 0, len(puzzle.Pieces))
 	for _, piece := range puzzle.Pieces {
+		pieces = append(pieces, piece)
+	}
+	sort.Sort(ByEscColor{pieces})
+	hash := fnv.New32()
+	for _, piece := range pieces {
 		hash.Write(piece.stateID(-minX, -minY, -minZ))
 	}
 	return fmt.Sprintf("%X", hash.Sum32())

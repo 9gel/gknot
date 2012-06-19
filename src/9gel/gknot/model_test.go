@@ -83,7 +83,7 @@ func TestOverlapError(t *testing.T) {
 			{-1, 0, 0, 6},
 			{0, 0, 1, 2},
 			{0, 0, 0, 1}}}
-	puzzle := &Puzzle{make([]*Piece, 0, 6), make(CellMap)}
+	puzzle := &Puzzle{make(map[uint8]*Piece, 6), make(CellMap)}
 
 	defer func() {
 		if err := recover(); err != nil {
@@ -117,11 +117,11 @@ func TestNewPuzzle(t *testing.T) {
 func TestStateID(t *testing.T) {
 	origPuzzle := NewPuzzle()
 	origStateID := origPuzzle.StateID()
-	if origStateID != "3E480234" {
-		t.Fatalf("New puzzle should have state ID 3E480234, actual %v", origStateID)
+	if origStateID != "D879AEE0" {
+		t.Fatalf("New puzzle should have state ID D879AEE0, actual %v", origStateID)
 	}
 	// Create a new puzzle with all pieces translated the same way.
-	newPuzzle := &Puzzle{make([]*Piece, 0, 6), make(CellMap)}
+	newPuzzle := &Puzzle{make(map[uint8]*Piece, 6), make(CellMap)}
 	translate := &TransformMatrix{
 		{1, 0, 0, -4},
 		{0, 1, 0, -3},
