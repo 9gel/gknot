@@ -79,6 +79,8 @@ type Puzzle struct {
 
 // Models a mutation to a Puzzle.
 type Mutation struct {
+	PieceID uint8
+	Transform TransformMatrix
 }
 
 // Error for when two pieces occupy the same cell.
@@ -301,6 +303,8 @@ type ByEscColor struct { Pieces }
 
 func (p ByEscColor) Less(i, j int) bool { return p.Pieces[i].Definition.EscColor < p.Pieces[j].Definition.EscColor }
 
+// The state ID of a puzzle is calculated from it's pieces' configuration. The puzzle is
+// normalized to having 0 minimum x, y and z before the calculation.
 func (puzzle Puzzle) StateID() string {
 	// Find the min x, min y and min z and move the puzzle to have min x, min y and min z == 0.
 	// Calculate ID for each piece and concatenate.
@@ -330,6 +334,7 @@ func (puzzle Puzzle) StateID() string {
 	return fmt.Sprintf("%X", hash.Sum32())
 }
 
+// The state ID of a piece is calculated from it's position and orientation in 3-space.
 func (piece Piece) stateID(shiftX, shiftY, shiftZ int) []byte {
 	id := make([]byte, 0, 7)
 	firstCell := piece.Cells[0]
@@ -342,4 +347,23 @@ func (piece Piece) stateID(shiftX, shiftY, shiftZ int) []byte {
 		byte(lastCell[1] + shiftY),
 		byte(lastCell[2] + shiftZ))
 	return id
+}
+
+// Mutates the puzzle and returns a new puzzle with copied pieces.
+// The pieces must not overlap, otherwise panic with OverlapError.
+func (puzzle Puzzle) Mutate(mutations ...Mutation) *Puzzle {
+	newPuzzle := &Puzzle{make(map[uint8]*Piece, len(puzzle.Pieces)), make(CellMap)}
+	mutated := make(map[uint8] bool)
+	for _, mutation := range mutations {
+		newPiece := *(puzzle.Pieces[mutation.PieceID])
+		newPiece.Cells.transform(&mutation.Transform)
+		newPuzzle.add(&newPiece)
+		mutated[mutation.PieceID] = true
+	}
+	for _, piece := range puzzle.Pieces {
+		if _, ok := mutated[piece.Definition.EscColor]; !ok {
+			newPuzzle.add(piece)
+		}
+	}
+	return newPuzzle
 }

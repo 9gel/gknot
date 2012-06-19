@@ -146,3 +146,23 @@ func TestStateID(t *testing.T) {
 		t.Fatalf("New puzzle should have same state %v, actual %v", origStateID, newStateID)
 	}
 }
+
+// Translate all pieces by the same way should yield the same puzzle, hence the same state ID.
+func TestMutate_translation_stateID(t *testing.T) {
+	origPuzzle := NewPuzzle()
+	origStateID := origPuzzle.StateID()
+	translate := TransformMatrix{
+		{1, 0, 0, 4},
+		{0, 1, 0, -5},
+		{0, 0, 1, -9},
+		{0, 0, 0, 1}}
+	mutations := make([]Mutation, 0, len(origPuzzle.Pieces))
+	for pieceID := range origPuzzle.Pieces {
+		mutations = append(mutations, Mutation{pieceID, translate})
+	}
+	newPuzzle := origPuzzle.Mutate(mutations...)
+	if newStateID := newPuzzle.StateID(); newStateID != origStateID {
+		t.Fatalf("New translated puzzle should have same state %v, actual %v", origStateID, newStateID)
+	}
+}
+
