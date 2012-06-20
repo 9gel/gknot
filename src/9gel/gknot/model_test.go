@@ -166,3 +166,31 @@ func TestMutate_translation_stateID(t *testing.T) {
 	}
 }
 
+func TestMutate_deepCopy(t *testing.T) {
+	transform := TransformMatrix{
+		{1, 0, 0, -1},
+		{0, 1, 0, 0},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}}
+	mutations := []Mutation{
+		{31, transform}, {32, transform}, {33, transform}, {34, transform}, {36, transform}}
+	origPuzzle := NewPuzzle()
+	origPuzzle.Mutate(mutations...)
+	testOrigPuzzle := NewPuzzle()
+	for testCell, _ := range testOrigPuzzle.CellMap {
+		if _, ok := origPuzzle.CellMap[testCell]; !ok {
+			t.Fatalf("Puzzle mutation should not modify original CellMap")
+		}
+	}
+	for testID, testPiece := range testOrigPuzzle.Pieces {
+		origPiece, ok := origPuzzle.Pieces[testID]
+		if !ok {
+			t.Fatalf("Puzzle mutation should not modify original Pieces")
+		}
+		for i, cell := range testPiece.Cells {
+			if origPiece.Cells[i] != cell {
+				t.Fatalf("Puzzle mutation should not modify original Pieces cells")
+			}
+		}
+	}
+}

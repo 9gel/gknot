@@ -357,7 +357,9 @@ func (puzzle Puzzle) Mutate(mutations ...Mutation) *Puzzle {
 	newPuzzle := &Puzzle{make(map[uint8]*Piece, len(puzzle.Pieces)), make(CellMap)}
 	mutated := make(map[uint8] bool)
 	for _, mutation := range mutations {
-		newPiece := *(puzzle.Pieces[mutation.PieceID])
+		existPiece := puzzle.Pieces[mutation.PieceID]
+		newPiece := Piece{existPiece.Definition, make(Cells, len(existPiece.Cells))}
+		copy(newPiece.Cells, existPiece.Cells)
 		newPiece.Cells.transform(&mutation.Transform)
 		newPuzzle.add(&newPiece)
 		mutated[mutation.PieceID] = true
