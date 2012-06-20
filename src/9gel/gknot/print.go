@@ -59,8 +59,8 @@ func ProjectPuzzle(axis1, axis2 Axis, puzzle Puzzle) ProjectedCells {
 }
 
 func (projected ProjectedCells) axesMax() (axis1Max, axis2Max int) {
-	axis1Max = -20
-	axis2Max = -20
+	axis1Max = -(int(^uint(0) >> 1) - 1)
+	axis2Max = axis1Max
 	for coords := range projected {
 		if coords[0] > axis1Max {
 			axis1Max = coords[0]
@@ -73,8 +73,8 @@ func (projected ProjectedCells) axesMax() (axis1Max, axis2Max int) {
 }
 
 func (projected ProjectedCells) axesMin() (axis1Min, axis2Min int) {
-	axis1Min = 20
-	axis2Min = 20
+	axis1Min = int(^uint(0) >> 1)
+	axis2Min = axis1Min
 	for coords := range projected {
 		if coords[0] < axis1Min {
 			axis1Min = coords[0]
