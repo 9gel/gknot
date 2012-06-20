@@ -303,9 +303,11 @@ type ByEscColor struct { Pieces }
 
 func (p ByEscColor) Less(i, j int) bool { return p.Pieces[i].Definition.EscColor < p.Pieces[j].Definition.EscColor }
 
+type StateID string
+
 // The state ID of a puzzle is calculated from it's pieces' configuration. The puzzle is
 // normalized to having 0 minimum x, y and z before the calculation.
-func (puzzle Puzzle) StateID() string {
+func (puzzle Puzzle) StateID() StateID {
 	// Find the min x, min y and min z and move the puzzle to have min x, min y and min z == 0.
 	// Calculate ID for each piece and concatenate.
 	minX := 30
@@ -331,7 +333,7 @@ func (puzzle Puzzle) StateID() string {
 	for _, piece := range pieces {
 		hash.Write(piece.stateID(-minX, -minY, -minZ))
 	}
-	return fmt.Sprintf("%X", hash.Sum32())
+	return StateID(fmt.Sprintf("%X", hash.Sum32()))
 }
 
 // The state ID of a piece is calculated from it's position and orientation in 3-space.
