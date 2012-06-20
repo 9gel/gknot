@@ -72,6 +72,20 @@ func (projected ProjectedCells) axesMax() (axis1Max, axis2Max int) {
 	return
 }
 
+func (projected ProjectedCells) axesMin() (axis1Min, axis2Min int) {
+	axis1Min = 20
+	axis2Min = 20
+	for coords := range projected {
+		if coords[0] < axis1Min {
+			axis1Min = coords[0]
+		}
+		if coords[1] < axis2Min {
+			axis2Min = coords[1]
+		}
+	}
+	return
+}
+
 // Transforms the cells using the transformation and add to screenCells.
 func (screenCells ProjectedCells) transformAndAddCells(transform Transform2D, cells ProjectedCells) {
 	for cellCoords, cell := range cells {
@@ -105,8 +119,9 @@ func (puzzle Puzzle) Print() {
 	screenCells := make(ProjectedCells)
 
 	_, xyMaxY := xyProjected.axesMax()
+	xyMinX, _ := xyProjected.axesMin()
 	screenCells.transformAndAddCells(Transform2D{
-		{1, 0, 0},
+		{1, 0, -xyMinX},
 		{0, -1, xyMaxY}}, xyProjected)
 
 	yzMaxY, yzMaxZ := yzProjected.axesMax()
@@ -114,8 +129,9 @@ func (puzzle Puzzle) Print() {
 		{0, -1, yzMaxZ + 20},
 		{-1, 0, yzMaxY}}, yzProjected)
 
+	xzMinX, _ := xzProjected.axesMin()
 	screenCells.transformAndAddCells(Transform2D{
-		{1, 0, 40},
+		{1, 0, 40 - xzMinX},
 		{0, 1, 0}}, xzProjected)
 
 	screenMaxX, screenMaxY := screenCells.axesMax()

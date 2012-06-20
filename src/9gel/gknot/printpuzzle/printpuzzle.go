@@ -21,6 +21,13 @@ func main() {
 		{0, 0, 0, 1}}}
 	newPuzzle := puzzle.Mutate(mutation)
 	newPuzzle.Print()
-	fmt.Println("Moving the Orange pice by another 1 along x axis:")
-	newPuzzle.Mutate(mutation).Print()
+
+	fmt.Println("Moving the all but Orange pice by -1 along x axis:")
+	transform := gknot.TransformMatrix{
+		{1, 0, 0, -1},
+		{0, 1, 0, 0},
+		{0, 0, 1, 0},
+		{0, 0, 0, 1}}
+	mutations := []gknot.Mutation{{31, transform}, {32, transform}, {33, transform}, {34, transform}, {36, transform}}
+	newPuzzle.Mutate(mutations...).Print()
 }
