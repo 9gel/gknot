@@ -129,10 +129,10 @@ func (puzzle Puzzle) Print() {
 		{0, -1, yzMaxZ + 20},
 		{-1, 0, yzMaxY}}, yzProjected)
 
-	xzMinX, _ := xzProjected.axesMin()
+	xzMinX, xzMinZ := xzProjected.axesMin()
 	screenCells.transformAndAddCells(Transform2D{
 		{1, 0, 40 - xzMinX},
-		{0, 1, 0}}, xzProjected)
+		{0, 1, -xzMinZ}}, xzProjected)
 
 	screenMaxX, screenMaxY := screenCells.axesMax()
 	fmt.Printf("= %c[1;31m%v%c[0m =\n", esc, puzzle.StateID(), esc)
